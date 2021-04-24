@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# set default when no time specified
+if [ -z "$1" ]; then
+    sleeptime="60"
+else
+    sleeptime="$1"
+fi
+
+while true
+    do
+
+    # redirect all possible output to /dev/null
+    python3 imap-mirror > /dev/null 2> /dev/null
+
+    sleep "${sleeptime}s"
+done

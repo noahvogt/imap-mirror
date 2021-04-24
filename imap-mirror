@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import imaplib
+import email
+import configparser
+
+# get config
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+from_server = config['SENDING']['server']
+from_username = config['SENDING']['user']
+from_password = config['SENDING']['password']
+from_port = config['SENDING']['port']
+
+to_server = config['RECEIVING']['server']
+to_username = config['RECEIVING']['user']
+to_password = config['RECEIVING']['password']
+to_port = config['RECEIVING']['port']
+
+
+# setup connections
+from_mail = imaplib.IMAP4_SSL(from_server, from_port)
+from_mail.login(from_username, from_password)
+from_mail.select("inbox")
+
+to_mail = imaplib.IMAP4_SSL(to_server, to_port)
+to_mail.login(to_username, to_password)
+to_mail.select("inbox")
+
+
+# fetch all unread emails
+_, search_data = from_mail.search(None, 'UNSEEN')
+
+for num in search_data[0].split():
+
+    # get email + headers
+    _, data = from_mail.fetch(num, '(RFC822)')
+    strdata = from_mail.fetch(num, '(RFC822)')[1]
+    flags = " ".join(imaplib.ParseFlags(strdata[0][0]))
+    date = imaplib.Internaldate2tuple(strdata[0][0])
+
+    # push the message to the receiving imap server
+    try:
+        to_mail.append("inbox", flags, date, strdata[0][1])
+    except Exception:
+        "Error: Could not migrate message."
